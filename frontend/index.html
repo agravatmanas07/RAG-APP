@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DataMind RAG — AI Data Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3d;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --text: #e8e8f0;
+    --text-muted: #6b6b8a;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(108,99,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,99,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glowing orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb-1 { width: 500px; height: 500px; background: var(--accent); top: -100px; left: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: var(--accent2); bottom: -100px; right: -100px; }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 2rem 0 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+  }
+  .logo-text { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em; }
+  .logo-text span { color: var(--accent); }
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    background: rgba(108,99,255,0.15);
+    border: 1px solid rgba(108,99,255,0.3);
+    color: var(--accent);
+    padding: 0.3rem 0.8rem;
+    border-radius: 100px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 4rem 0 3rem;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    margin-bottom: 1.2rem;
+  }
+  .hero h1 .highlight {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    max-width: 520px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  /* ── Steps indicator ── */
+  .steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 0 auto 3rem;
+    max-width: 500px;
+  }
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1;
+    cursor: pointer;
+  }
+  .step-num {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: all 0.3s;
+    background: var(--surface);
+  }
+  .step.active .step-num {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 0 20px rgba(108,99,255,0.4);
+  }
+  .step.done .step-num {
+    border-color: var(--accent3);
+    background: var(--accent3);
+    color: #000;
+  }
+  .step-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .step.active .step-label { color: var(--accent); }
+  .step-line {
+    height: 2px;
+    flex: 1;
+    background: var(--border);
+    margin-bottom: 1.5rem;
+    transition: background 0.3s;
+  }
+  .step-line.done { background: var(--accent3); }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: rgba(108,99,255,0.3); }
+  .card-title {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-family: var(--font-mono);
+  }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.05);
+  }
+  .upload-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+  .upload-icon { font-size: 3rem; margin-bottom: 1rem; }
+  .upload-zone h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .upload-zone p { color: var(--text-muted); font-size: 0.9rem; }
+
+  /* ── Button ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 2rem;
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: -0.01em;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #8b85ff);
+    color: white;
+    box-shadow: 0 4px 20px rgba(108,99,255,0.35);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(108,99,255,0.5); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-danger {
+    background: rgba(255,101,132,0.15);
+    border: 1px solid rgba(255,101,132,0.3);
+    color: var(--accent2);
+  }
+  .btn-danger:hover { background: rgba(255,101,132,0.25); }
+  .btn-sm { padding: 0.5rem 1rem; font-size: 0.8rem; }
+
+  /* ── Store selector ── */
+  .store-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .store-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .store-card:hover { border-color: var(--accent); }
+  .store-card.selected {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.1);
+  }
+  .store-card .store-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .store-card .store-meta {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+  .store-card .del-btn {
+    position: absolute;
+    top: 0.5rem; right: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1;
+    transition: color 0.2s;
+    padding: 2px;
+  }
+  .store-card .del-btn:hover { color: var(--accent2); }
+
+  /* ── Query ── */
+  .query-input-wrap {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  .query-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1.2rem;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .query-input:focus { border-color: var(--accent); }
+  .query-input::placeholder { color: var(--text-muted); }
+
+  /* ── Answer ── */
+  .answer-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .answer-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+  .answer-text {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+  .sources-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-family: var(--font-mono);
+  }
+  .source-chip {
+    background: rgba(108,99,255,0.1);
+    border: 1px solid rgba(108,99,255,0.2);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 2rem; right: 2rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    font-size: 0.9rem;
+    z-index: 1000;
+    animation: slideUp 0.3s ease;
+    max-width: 360px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+  .toast.success { border-color: rgba(67,233,123,0.4); color: var(--accent3); }
+  .toast.error { border-color: rgba(255,101,132,0.4); color: var(--accent2); }
+
+  /* ── Loader ── */
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Status bar ── */
+  .status-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent3); animation: pulse 2s ease infinite; }
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+
+  /* ── History ── */
+  .history-item {
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 0;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-q { font-weight: 700; margin-bottom: 0.4rem; font-size: 0.9rem; }
+  .history-a { color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; }
+
+  /* ── Section visibility ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 2rem 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+  }
+  footer span { color: var(--accent); }
+
+  @media (max-width: 640px) {
+    .query-input-wrap { flex-direction: column; }
+    .steps { gap: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🧠</div>
+      <div class="logo-text">Data<span>Mind</span></div>
+    </div>
+    <span class="badge">RAG · PRODUCTION v1.0</span>
+  </header>
+
+  <div class="hero">
+    <h1>Ask anything about<br/><span class="highlight">your data</span></h1>
+    <p>Upload CSV or Excel files, then ask natural language questions. Powered by ChromaDB embeddings + Claude AI.</p>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step1" onclick="goStep(1)">
+      <div class="step-num">1</div>
+      <div class="step-label">Upload</div>
+    </div>
+    <div class="step-line" id="line1"></div>
+    <div class="step" id="step2" onclick="goStep(2)">
+      <div class="step-num">2</div>
+      <div class="step-label">Select</div>
+    </div>
+    <div class="step-line" id="line2"></div>
+    <div class="step" id="step3" onclick="goStep(3)">
+      <div class="step-num">3</div>
+      <div class="step-label">Query</div>
+    </div>
+  </div>
+
+  <!-- API Config -->
+  <div class="status-bar">
+    <div class="dot"></div>
+    <span>API:</span>
+    <input id="api-url" value="http://localhost:8000" style="background:none;border:none;color:var(--text);font-family:var(--font-mono);font-size:0.8rem;outline:none;flex:1;" />
+    <button class="btn btn-sm" onclick="checkHealth()" style="background:rgba(108,99,255,0.2);border:1px solid rgba(108,99,255,0.3);color:var(--accent);border-radius:6px;cursor:pointer;font-family:var(--font-mono);font-size:0.75rem;padding:0.3rem 0.7rem;">ping</button>
+  </div>
+
+  <!-- Section 1: Upload -->
+  <div id="sec1" class="section active">
+    <div class="card">
+      <div class="card-title">01 — Upload Data File</div>
+      <div class="upload-zone" id="dropzone">
+        <input type="file" id="file-input" accept=".csv,.xlsx,.xls" onchange="handleFileSelect(event)"/>
+        <div class="upload-icon">📂</div>
+        <h3>Drop your file here</h3>
+        <p>CSV, XLSX, XLS — up to 50MB</p>
+      </div>
+      <div id="file-preview" style="display:none; margin-top:1rem;">
+        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+          <div style="flex:1; min-width:200px;">
+            <div style="font-weight:700; margin-bottom:0.25rem;" id="preview-name"></div>
+            <div style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-muted);" id="preview-meta"></div>
+          </div>
+          <button class="btn btn-primary" id="upload-btn" onclick="uploadFile()">
+            <span>Index Data</span> ⚡
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Select store -->
+  <div id="sec2" class="section">
+    <div class="card">
+      <div class="card-title">02 — Select Data Store</div>
+      <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:0.5rem;">Choose which uploaded dataset to query.</p>
+      <div class="store-grid" id="store-grid">
+        <div style="color:var(--text-muted); font-size:0.85rem;">No stores yet. Upload a file first.</div>
+      </div>
+      <div style="margin-top:1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="goStep(1)">+ Upload More</button>
+        <button class="btn btn-primary" id="go-query-btn" onclick="goStep(3)" disabled>Query Selected →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Query -->
+  <div id="sec3" class="section">
+    <div class="card">
+      <div class="card-title">03 — Ask Your Question</div>
+      <div id="active-store-info" style="font-family:var(--font-mono); font-size:0.8rem; color:var(--accent); margin-bottom:1rem;"></div>
+      <div class="query-input-wrap">
+        <input class="query-input" id="query-input" placeholder="e.g. What is the total sales in Q3? Who is the top customer?" onkeydown="if(event.key==='Enter') askQuestion()"/>
+        <button class="btn btn-primary" id="ask-btn" onclick="askQuestion()">Ask AI ✦</button>
+      </div>
+
+      <!-- Suggestions -->
+      <div style="margin-top:0.75rem; display:flex; flex-wrap:wrap; gap:0.5rem;">
+        <span style="font-size:0.75rem; color:var(--text-muted); align-self:center;">Try:</span>
+        <button class="btn btn-sm" onclick="setQuery(this.textContent)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);border-radius:20px;">Summarize the data</button>
+        <button class="btn btn-sm" onclick="setQuery(this.textContent)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);border-radius:20px;">What are the top values?</button>
+        <button class="btn btn-sm" onclick="setQuery(this.textContent)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);border-radius:20px;">Show anomalies or outliers</button>
+      </div>
+
+      <div id="answer-container"></div>
+    </div>
+
+    <!-- History -->
+    <div class="card" id="history-card" style="display:none;">
+      <div class="card-title">Query History</div>
+      <div id="history-list"></div>
+    </div>
+
+    <div style="margin-top:0.5rem;">
+      <button class="btn" onclick="goStep(2)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">← Back to Stores</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Built by <span>Manas Agravat</span> · AI & Data Engineer · FastAPI + ChromaDB + Claude
+</footer>
+
+<script>
+const API = () => document.getElementById('api-url').value.replace(/\/$/, '');
+let stores = {}; // store_id -> {filename, rows}
+let selectedStore = null;
+let history = [];
+let pendingFile = null;
+
+// ── Step navigation ───────────────────────────────────────────────
+function goStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById(`sec${i}`).classList.toggle('active', i === n);
+    const s = document.getElementById(`step${i}`);
+    s.classList.remove('active', 'done');
+    if (i < n) s.classList.add('done');
+    if (i === n) s.classList.add('active');
+  });
+  [1,2].forEach(i => {
+    const l = document.getElementById(`line${i}`);
+    l.classList.toggle('done', i < n);
+  });
+  if (n === 2) renderStores();
+  if (n === 3 && selectedStore) {
+    const s = stores[selectedStore];
+    document.getElementById('active-store-info').textContent =
+      `▸ Active store: ${s.filename} (${s.rows} rows indexed)`;
+  }
+}
+
+// ── Health check ──────────────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const r = await fetch(`${API()}/`);
+    const d = await r.json();
+    toast(d.message || 'API connected!', 'success');
+  } catch(e) {
+    toast('Cannot reach API. Is the backend running?', 'error');
+  }
+}
+
+// ── Upload ────────────────────────────────────────────────────────
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  pendingFile = file;
+  document.getElementById('preview-name').textContent = file.name;
+  document.getElementById('preview-meta').textContent =
+    `${(file.size/1024).toFixed(1)} KB · ${file.type || 'spreadsheet'}`;
+  document.getElementById('file-preview').style.display = 'block';
+}
+
+// Drag & drop
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) { pendingFile = file; handleFileSelect({target:{files:[file]}}); }
+});
+
+async function uploadFile() {
+  if (!pendingFile) return;
+  const btn = document.getElementById('upload-btn');
+  btn.innerHTML = '<span class="spinner"></span> Indexing...';
+  btn.disabled = true;
+  const fd = new FormData();
+  fd.append('file', pendingFile);
+  try {
+    const r = await fetch(`${API()}/upload`, { method:'POST', body: fd });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Upload failed');
+    stores[d.store_id] = { filename: d.filename, rows: d.rows_indexed, columns: d.columns };
+    toast(`✓ Indexed ${d.rows_indexed} rows from ${d.filename}`, 'success');
+    btn.innerHTML = '<span>Index Data</span> ⚡';
+    btn.disabled = false;
+    pendingFile = null;
+    document.getElementById('file-preview').style.display = 'none';
+    selectedStore = d.store_id;
+    setTimeout(() => goStep(2), 800);
+  } catch(e) {
+    toast(e.message, 'error');
+    btn.innerHTML = '<span>Index Data</span> ⚡';
+    btn.disabled = false;
+  }
+}
+
+// ── Stores ────────────────────────────────────────────────────────
+function renderStores() {
+  const grid = document.getElementById('store-grid');
+  const ids = Object.keys(stores);
+  if (!ids.length) {
+    grid.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;">No stores yet. Upload a file first.</div>';
+    document.getElementById('go-query-btn').disabled = true;
+    return;
+  }
+  grid.innerHTML = ids.map(id => {
+    const s = stores[id];
+    return `<div class="store-card ${id===selectedStore?'selected':''}" onclick="selectStore('${id}')">
+      <button class="del-btn" onclick="event.stopPropagation();deleteStore('${id}')">✕</button>
+      <div class="store-name">📊 ${s.filename}</div>
+      <div class="store-meta">${s.rows} rows · ID: ${id}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('go-query-btn').disabled = !selectedStore;
+}
+
+function selectStore(id) {
+  selectedStore = id;
+  renderStores();
+  document.getElementById('go-query-btn').disabled = false;
+}
+
+async function deleteStore(id) {
+  try {
+    await fetch(`${API()}/stores/${id}`, { method:'DELETE' });
+  } catch(e) {}
+  delete stores[id];
+  if (selectedStore === id) selectedStore = null;
+  renderStores();
+  toast('Store deleted', 'success');
+}
+
+// ── Query ─────────────────────────────────────────────────────────
+function setQuery(q) { document.getElementById('query-input').value = q; }
+
+async function askQuestion() {
+  const q = document.getElementById('query-input').value.trim();
+  if (!q) return;
+  if (!selectedStore) { toast('Select a data store first!', 'error'); return; }
+  const btn = document.getElementById('ask-btn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${API()}/query`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ store_id: selectedStore, question: q, top_k: 5 })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Query failed');
+    renderAnswer(q, d.answer, d.sources);
+    history.unshift({ q, a: d.answer });
+    renderHistory();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+  btn.innerHTML = 'Ask AI ✦';
+  btn.disabled = false;
+}
+
+function renderAnswer(q, answer, sources) {
+  const container = document.getElementById('answer-container');
+  const sourcesHtml = sources.length ? `
+    <div class="sources-title">🔍 Retrieved Context (${sources.length} chunks)</div>
+    ${sources.map(s => `<div class="source-chip">${s}</div>`).join('')}
+  ` : '';
+  container.innerHTML = `
+    <div class="answer-box">
+      <div class="answer-header">✦ AI Answer</div>
+      <div class="answer-text">${escHtml(answer)}</div>
+      ${sourcesHtml}
+    </div>`;
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const card = document.getElementById('history-card');
+  if (!history.length) { card.style.display='none'; return; }
+  card.style.display = 'block';
+  list.innerHTML = history.slice(0, 5).map(h => `
+    <div class="history-item">
+      <div class="history-q">❓ ${escHtml(h.q)}</div>
+      <div class="history-a">${escHtml(h.a.slice(0,180))}${h.a.length>180?'…':''}</div>
+    </div>`).join('');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

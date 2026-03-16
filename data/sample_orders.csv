@@ -1,0 +1,16 @@
+order_id,customer,product,category,quantity,price,total,city,date,status
+1001,Rahul Sharma,Laptop Pro,Electronics,1,85000,85000,Ahmedabad,2024-01-10,Delivered
+1002,Priya Patel,Office Chair,Furniture,2,12000,24000,Surat,2024-01-11,Delivered
+1003,Amit Shah,Python Book,Education,3,800,2400,Ahmedabad,2024-01-12,Delivered
+1004,Sneha Joshi,Wireless Mouse,Electronics,5,1500,7500,Mumbai,2024-01-13,Pending
+1005,Rohit Mehta,Standing Desk,Furniture,1,25000,25000,Bangalore,2024-01-15,Delivered
+1006,Kavya Reddy,Data Science Course,Education,1,15000,15000,Hyderabad,2024-01-16,Delivered
+1007,Arjun Kumar,Monitor 4K,Electronics,2,35000,70000,Ahmedabad,2024-01-18,Delivered
+1008,Pooja Nair,Ergonomic Keyboard,Electronics,3,3500,10500,Chennai,2024-01-19,Cancelled
+1009,Vijay Desai,ML Textbook,Education,2,1200,2400,Ahmedabad,2024-01-20,Delivered
+1010,Meera Singh,Gaming Headset,Electronics,1,8000,8000,Delhi,2024-01-21,Delivered
+1011,Kiran Rao,Bookshelf,Furniture,1,6000,6000,Surat,2024-01-22,Pending
+1012,Suresh Iyer,Tablet,Electronics,1,45000,45000,Bangalore,2024-01-23,Delivered
+1013,Anita Gupta,Cloud Computing Book,Education,4,950,3800,Ahmedabad,2024-01-24,Delivered
+1014,Rajesh Verma,LED Lamp,Furniture,6,2000,12000,Mumbai,2024-01-25,Delivered
+1015,Deepak Jain,Smartphone,Electronics,1,60000,60000,Ahmedabad,2024-01-26,Delivered
